@@ -6,6 +6,11 @@
 using namespace mongo;
 using namespace CryptoPP;
 
+bool randomBool(){
+    return 0 + (rand() % (1 - 0 + 1)) == 1;
+}
+
+
 int main() {
     mongo::client::initialize();
 
@@ -14,7 +19,7 @@ int main() {
     uint32_t N = 15;
     
     ORAM* oram = new PathORAM(N);
-
+    //基本上填满的initialization
     for(uint32_t i = 0; i < N*PathORAM_Z; i ++) {
         char str[12];
         sprintf(str, "%zu\n", (size_t)i);
@@ -33,6 +38,29 @@ int main() {
     }
     oram->display();
     printf("occupation rate of block close to leaf:%lf\n",oram->getcnt()/((N-2)*PathORAM_Z));
+
+    int32_t request_num=0;
+    while(!oram->IsEmpty()&&request_num<N*PathORAM_Z){
+        while(oram->IsAvailable()){
+            char str[12];
+            int32_t blockID = Util::rand_int(N*PathORAM_Z);
+            sprintf(str, "%zu\n", blockID);
+            std::string key(str);
+            std::string value;
+            const uint32_t tmp_len = B - AES::BLOCKSIZE - 2 * sizeof(uint32_t);
+            byte tmp_buffer[tmp_len];
+            AutoSeededRandomPool prng;
+            prng.GenerateBlock(tmp_buffer, tmp_len);
+            value = std::string((const char *)tmp_buffer, tmp_len);
+            std::string bID = std::string((const char *)(& blockID), sizeof(uint32_t));
+            value = bID + value;
+            Request r(blockID,value);
+            oram->addRequest(r);
+            request_num++;
+        }
+        oram->schedule();
+    }
+
 
     // size_t roundNum = 5;
     // for(size_t r = 0; r < roundNum; r ++) {

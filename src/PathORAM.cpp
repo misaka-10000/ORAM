@@ -210,7 +210,6 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
     loadAlongPath(path_id, sbuffer, height * PathORAM_Z);
 }
 
-
 bool PathORAM::check(int x, int y, int l) {
     return (x >> l) == (y >> l);
 }
@@ -245,6 +244,10 @@ void PathORAM::loadAlongPath(const uint32_t& x, const std::string* sbuffer, cons
 
 bool PathORAM::IsAvailable(){
     return waitlist.size()<waitlist_size;
+}
+
+bool PathORAM::IsEmpty(){
+    return waitlist.empty();
 }
 
 void PathORAM::display(){
@@ -289,7 +292,6 @@ void PathORAM::fetchAllBlock(std::string* allblock, size_t& length) {
     //将所有要的block从服务器读出
     conn->find(ids, allblock, length);
 }
-
 
 void PathORAM::schedule(){
     int i,j;
@@ -365,4 +367,8 @@ void PathORAM::schedule(){
 
 double PathORAM::getcnt(){
     return cnt;
+}
+
+void PathORAM::addRequest(Request R){
+    waitlist.push_back(R);
 }

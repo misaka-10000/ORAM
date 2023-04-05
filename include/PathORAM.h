@@ -16,10 +16,12 @@ public:
     virtual void put(const std::string & key, const std::string & value);
     virtual std::string get(const uint32_t & key);
     virtual void put(const uint32_t & key, const std::string & value);
-    bool IsAvailable();
+    virtual bool IsAvailable();
+    virtual bool IsEmpty();
     virtual void display();
     virtual double getcnt();
     int32_t cnt;
+    virtual void addRequest(Request R);
 private:
     void access(const char& op, const uint32_t& block_id, std::string& data);
     void fetchaccess(const char& op, const uint32_t& block_id, std::string& data);
@@ -27,6 +29,7 @@ private:
     bool check(int x, int y, int l);
     //schedule according to the waitlist
     void schedule();
+
 
     void fetchAllBlock(std::string* allblock, size_t& length);
     void fetchAlongPath(const uint32_t& x, std::string* sbuffer, size_t& length);
