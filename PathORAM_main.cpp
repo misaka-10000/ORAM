@@ -1,7 +1,3 @@
-//
-// Created by Dong Xie on 7/6/2016.
-//
-
 #include <mongo/client/dbclient.h>
 #include <cryptopp/osrng.h>
 #include "PathORAM.h"
