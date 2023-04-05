@@ -22,6 +22,8 @@ public:
     int32_t cnt;
 private:
     void access(const char& op, const uint32_t& block_id, std::string& data);
+    void fetchaccess(const char& op, const uint32_t& block_id, std::string& data);
+    void loadaccess(const char& op, const uint32_t& block_id, std::string& data,const uint32_t& path_id);
     bool check(int x, int y, int l);
     //schedule according to the waitlist
     void schedule();
