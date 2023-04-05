@@ -30,6 +30,7 @@ private:
     void fetchAlongPath(const uint32_t& x, std::string* sbuffer, size_t& length);
     void loadAlongPath(const uint32_t& x, const std::string* sbuffer, const size_t& length);
     std::unordered_map<uint32_t, std::string> stash;
+    //第一个元素是对应Path,第二个元素是所在level
     std::pair<uint32_t, uint32_t> *pos_map;
     std::vector< std::pair<uint32_t, std::string> > insert_buffer;
     std::vector<Request> waitlist;

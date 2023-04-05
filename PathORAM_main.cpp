@@ -11,11 +11,11 @@ int main() {
 
     srand((uint32_t)time(NULL));
 
-    uint32_t N = 1023;
+    uint32_t N = 15;
     
     ORAM* oram = new PathORAM(N);
 
-    for(uint32_t i = 0; i < (N-2)*PathORAM_Z; i ++) {
+    for(uint32_t i = 0; i < N*PathORAM_Z; i ++) {
         char str[12];
         sprintf(str, "%zu\n", (size_t)i);
         std::string key(str);
