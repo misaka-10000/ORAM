@@ -1,3 +1,3 @@
-Basic Path ORAM
+Path ORAM with multi-request-schedule
 
 
