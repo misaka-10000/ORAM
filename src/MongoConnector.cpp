@@ -1,5 +1,6 @@
 #include <cstdio>
 #include "MongoConnector.h"
+#include <iostream>
 
 MongoConnector::MongoConnector(const std::string& url, const std::string& collection_name, const bool flag)
         :ServerConnector(), mongo(), collection_name(collection_name) {
@@ -125,6 +126,24 @@ void MongoConnector::find(const std::vector<uint32_t>& ids, std::string* sbuffer
     }
     }
 }
+
+void MongoConnector::findAll(const std::vector<uint32_t>& ids, std::string* sbuffer, size_t& length, const std::string& ns) {
+    std::cout<<"here"<<std::endl;
+    std::string mongo_collection = (ns == "") ? collection_name : ns;
+    length = 0;
+    for(auto item:ids){
+        std::unique_ptr<DBClientCursor> cursor = mongo.query(mongo_collection, MONGO_QUERY("id" << item));
+        while (cursor->more()) {
+            BSONObj p = cursor->next();
+            int len;
+            const char* raw_data = p.getField("data").binData(len);
+            sbuffer[length] = std::string(raw_data, (size_t)len);
+            ++length;
+        }
+    }
+    std::cout<<"end here"<<std::endl;
+}
+
 
 std::string MongoConnector::fetch(const std::string& id, const std::string& ns) {
     std::string mongo_collection = (ns == "") ? collection_name : ns;

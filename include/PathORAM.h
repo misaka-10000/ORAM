@@ -20,7 +20,7 @@ public:
     virtual bool IsEmpty();
     virtual void display();
     virtual double getcnt();
-    int32_t cnt;
+    uint64_t cnt;
     virtual void addRequest(Request R);
 private:
     void access(const char& op, const uint32_t& block_id, std::string& data);
@@ -45,7 +45,6 @@ private:
     std::string* sbuffer;
     uint32_t n_blocks;
     uint32_t height;
-
     ServerConnector* conn;
 };
 

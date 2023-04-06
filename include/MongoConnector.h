@@ -42,6 +42,7 @@ public:
     virtual iterator* scan();
     virtual std::string find(const uint32_t& id, const std::string& ns = "");
     virtual void find(const std::vector<uint32_t>& ids, std::string* sbuffer, size_t& length, const std::string& ns = "");
+    virtual void findAll(const std::vector<uint32_t>& ids, std::string* sbuffer, size_t& length, const std::string& ns = "");
     virtual std::string fetch(const std::string& id, const std::string& ns = "");
     virtual void find(const uint32_t& low, const uint32_t& high, std::vector<std::string>& blocks, const std::string& ns = "");
     virtual void findByTag(const uint32_t& tag, std::string* sbuffer, size_t& length, const std::string& ns = "");

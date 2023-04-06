@@ -253,9 +253,9 @@ bool PathORAM::IsEmpty(){
 void PathORAM::display(){
     cnt=0;
     printf("All element in Stash:\n");
-    for(std::pair<uint32_t, std::string> kv:stash){
-        printf("block_id:%d belonging path:%d\n",kv.first,pos_map[kv.first].first);
-    }
+    // for(std::pair<uint32_t, std::string> kv:stash){
+    //     printf("block_id:%d belonging path:%d\n",kv.first,pos_map[kv.first].first);
+    // }
     size_t length;
     printf("Now showing the tree block:\n");
     fetchAllBlock(allblock, length);
@@ -268,10 +268,10 @@ void PathORAM::display(){
             int32_t b_id;
             memcpy(&b_id, plain.c_str(), sizeof(uint32_t));
             if(b_id!=-1&&pos_map[b_id].second>=height-2) cnt+=1;
-            if(b_id!=-1)
-            printf("block_ID:%d level:%d\n",b_id,pos_map[b_id].second);
-            else
-            printf("block_ID:%d\n",b_id);
+            // if(b_id!=-1)
+            // printf("block_ID:%d level:%d\n",b_id,pos_map[b_id].second);
+            // else
+            // printf("block_ID:%d\n",b_id);
         }
     }
     printf("---------------------------\n");
@@ -289,8 +289,10 @@ void PathORAM::fetchAllBlock(std::string* allblock, size_t& length) {
             ids.push_back(cur_pos * PathORAM_Z + i);
         cur_pos += 1;
     }
+    std::cout<<"before find"<<std::endl;
     //将所有要的block从服务器读出
-    conn->find(ids, allblock, length);
+    conn->findAll(ids, allblock, length);
+    std::cout<<"after find"<<std::endl;
 }
 
 void PathORAM::schedule(){
