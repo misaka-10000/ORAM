@@ -253,13 +253,12 @@ bool PathORAM::IsEmpty(){
 void PathORAM::display(){
     cnt=0;
     printf("All element in Stash:\n");
-    // for(std::pair<uint32_t, std::string> kv:stash){
-    //     printf("block_id:%d belonging path:%d\n",kv.first,pos_map[kv.first].first);
-    // }
+    for(std::pair<uint32_t, std::string> kv:stash){
+        printf("block_id:%d belonging path:%d\n",kv.first,pos_map[kv.first].first);
+    }
     size_t length;
     printf("Now showing the tree block:\n");
     fetchAllBlock(allblock, length);
-    printf("End Fetch block\n");
     uint32_t totoal_node= ((uint32_t)1 << height) -1;
     for(int i=0;i<totoal_node;i++){
         for(int j=0;j<PathORAM_Z;j++){
@@ -268,15 +267,13 @@ void PathORAM::display(){
             int32_t b_id;
             memcpy(&b_id, plain.c_str(), sizeof(uint32_t));
             if(b_id!=-1&&pos_map[b_id].second>=height-2) cnt+=1;
-            // if(b_id!=-1)
-            // printf("block_ID:%d level:%d\n",b_id,pos_map[b_id].second);
-            // else
-            // printf("block_ID:%d\n",b_id);
+            if(b_id!=-1)
+                printf("block_ID:%d path:%d level:%d\n",b_id,pos_map[b_id].first,pos_map[b_id].second);
+            else
+                printf("block_ID:%d\n",b_id);
         }
     }
     printf("---------------------------\n");
-    printf("end display function\n");
-
 }
 
 void PathORAM::fetchAllBlock(std::string* allblock, size_t& length) {
@@ -289,10 +286,8 @@ void PathORAM::fetchAllBlock(std::string* allblock, size_t& length) {
             ids.push_back(cur_pos * PathORAM_Z + i);
         cur_pos += 1;
     }
-    std::cout<<"before find"<<std::endl;
     //将所有要的block从服务器读出
     conn->findAll(ids, allblock, length);
-    std::cout<<"after find"<<std::endl;
 }
 
 void PathORAM::schedule(){
@@ -309,15 +304,21 @@ void PathORAM::schedule(){
             uint32_t level2=pos_map[r2.id].second;
             if(level2==height+1) continue;
             if(level1<level2){
-                uint32_t start = p1/(uint32_t)1 << (height - 1 - level1)*(uint32_t)1 << (height - 1 - level1);
-                if(p2<=start+(uint32_t)1 << (height - 1 - level1)&&p2>=start){
+                uint32_t start = (p1/((uint32_t)1 << (height - 1 - level1)))*((uint32_t)1 << (height - 1 - level1));
+                if(p2<=start+((uint32_t)1 << (height - 1 - level1))-1&&p2>=start){
+                    // std::cout<<p1<<" "<<level1<<" "<<p2<<" "<<level2<<std::endl;
+                    // std::cout<<"level1 is lower "<<p1<<std::endl;
+                    //std::cout<<start<<" "<<start+((uint32_t)1 << (height - 1 - level1))-1<<std::endl;
                     fusion=true;
                     break;
                 }
             }
             else{
-                uint32_t start = p2/(uint32_t)1 << (height - 1 - level2)*(uint32_t)1 << (height - 1 - level2);
-                if(p1<=start+(uint32_t)1 << (height - 1 - level2)&&p1>=start){
+                uint32_t start = (p2/((uint32_t)1 << (height - 1 - level2)))*((uint32_t)1 << (height - 1 - level2));
+                if(p1<=start+((uint32_t)1 << (height - 1 - level2))-1&&p1>=start){
+                    // std::cout<<p1<<" "<<level1<<" "<<p2<<" "<<level2<<std::endl;
+                    // std::cout<<"level2 is lower  "<<p2<<std::endl;
+                    // std::cout<<start<<" "<<start+((uint32_t)1 << (height - 1 - level2))-1<<std::endl;
                     fusion=true;
                     break;
                 }
@@ -330,7 +331,7 @@ void PathORAM::schedule(){
         Request r2=waitlist[j];
         uint32_t level1=pos_map[r1.id].second;
         uint32_t level2=pos_map[r2.id].second;
-        printf("fusion to access %d level at Path %d with %d level at Path %d\n",pos_map[i].first,pos_map[i].second,pos_map[j].first,pos_map[j].second);
+        printf("fusion to access level %d at Path %d with level %d at Path %d\n",pos_map[r1.id].second,pos_map[r1.id].first,pos_map[r2.id].second,pos_map[r2.id].first);
         if(level1<level2){
                 //原来的路径号,也是要写回的路径号
                 uint32_t x = pos_map[r1.id].first;
@@ -351,7 +352,9 @@ void PathORAM::schedule(){
             if(r1.write) loadaccess('w',r1.id,r1.value,x);
             else fetchaccess('r',r1.id,r1.value); 
         }
-        waitlist.erase(waitlist.begin() + i, waitlist.begin() + j);
+        waitlist.erase(waitlist.begin() + i);
+        waitlist.erase(waitlist.begin() + j-1);
+        printf("------------------------\n");
 
     }
     //无法进行fusion

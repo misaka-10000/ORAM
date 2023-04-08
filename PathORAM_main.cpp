@@ -2,7 +2,7 @@
 #include <cryptopp/osrng.h>
 #include "PathORAM.h"
 #include "Config.h"
-
+#include <iostream>
 using namespace mongo;
 using namespace CryptoPP;
 
@@ -16,9 +16,9 @@ int main() {
 
     srand((uint32_t)time(NULL));
 
-    uint32_t N = 1023;
+    uint32_t N = 15;
     
-    ORAM* oram = new PathORAM(N);
+    PathORAM* oram = new PathORAM(N);
     //基本上填满的initialization
     for(uint32_t i = 0; i < N*PathORAM_Z; i ++) {
         char str[12];
@@ -36,12 +36,12 @@ int main() {
         value = bID + value;
         oram->put(key, value);
     }
-    oram->display();
-    printf("occupation rate of block close to leaf:%lf\n",oram->getcnt()/(N*PathORAM_Z));
+    //oram->display();
+    //printf("occupation rate of block close to leaf:%lf\n",oram->getcnt()/(N*PathORAM_Z));
 
     int32_t request_num=0;
-    while(!oram->IsEmpty()&&request_num<N*PathORAM_Z){
-        while(oram->IsAvailable()){
+    while(!oram->IsEmpty()||request_num<N*PathORAM_Z){
+        while(oram->IsAvailable()&&request_num<N*PathORAM_Z){
             char str[12];
             uint32_t blockID = Util::rand_int(N*PathORAM_Z);
             sprintf(str, "%zu\n",(size_t)blockID);
@@ -58,8 +58,11 @@ int main() {
             oram->addRequest(r);
             request_num++;
         }
+        //std::cout<<"-----------------------"<<std::endl;
         oram->schedule();
+        //std::cout<<"-----------------------"<<std::endl;
     }
+    //oram->display();
 
 
     // size_t roundNum = 5;

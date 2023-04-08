@@ -128,7 +128,6 @@ void MongoConnector::find(const std::vector<uint32_t>& ids, std::string* sbuffer
 }
 
 void MongoConnector::findAll(const std::vector<uint32_t>& ids, std::string* sbuffer, size_t& length, const std::string& ns) {
-    std::cout<<"here"<<std::endl;
     std::string mongo_collection = (ns == "") ? collection_name : ns;
     length = 0;
     for(auto item:ids){
@@ -141,7 +140,6 @@ void MongoConnector::findAll(const std::vector<uint32_t>& ids, std::string* sbuf
             ++length;
         }
     }
-    std::cout<<"end here"<<std::endl;
 }
 
 
