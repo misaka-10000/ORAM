@@ -26,6 +26,8 @@ public:
     void schedule();
     //第一个元素是对应Path,第二个元素是所在level
     std::pair<uint32_t, uint32_t> *pos_map;
+    uint32_t fusion_cnt;
+    uint32_t ori_cnt;
 private:
     void access(const char& op, const uint32_t& block_id, std::string& data);
     void fetchaccess(const char& op, const uint32_t& block_id, std::string& data);
