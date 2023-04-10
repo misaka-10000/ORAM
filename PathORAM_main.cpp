@@ -3,6 +3,7 @@
 #include "PathORAM.h"
 #include "Config.h"
 #include <iostream>
+#include <fstream>
 using namespace mongo;
 using namespace CryptoPP;
 
@@ -12,16 +13,17 @@ bool randomBool(){
 
 
 int main() {
+    std::ofstream fout("a.txt");
+    std::streambuf* p=std::cout.rdbuf(fout.rdbuf());
     mongo::client::initialize();
     srand((uint32_t)time(NULL));
-    uint32_t N = 32767;
+    uint32_t N = 15;
     PathORAM* oram = new PathORAM(N);
     //基本上填满的initialization
     for(uint32_t i = 0; i < N*PathORAM_Z; i ++) {
         char str[12];
         sprintf(str, "%zu\n", (size_t)i);
         std::string key(str);
-
         std::string value;
         const uint32_t tmp_len = B - AES::BLOCKSIZE - 2 * sizeof(uint32_t);
         byte tmp_buffer[tmp_len];
@@ -35,7 +37,7 @@ int main() {
     }
     //oram->display();
     //printf("occupation rate of block close to leaf:%lf\n",oram->getcnt()/(N*PathORAM_Z));
-
+    //oram->disp();
     int32_t request_num=0;
     while(!oram->IsEmpty()||request_num<N*PathORAM_Z){
         while(oram->IsAvailable()&&request_num<N*PathORAM_Z){
@@ -61,23 +63,6 @@ int main() {
     }
     //oram->display();
     std::cout<<"fusion cnt"<<oram->fusion_cnt<<"   "<<"ordinary cnt:"<<oram->ori_cnt<<std::endl;
-
-    // size_t roundNum = 5;
-    // for(size_t r = 0; r < roundNum; r ++) {
-    //     for(size_t i = 0; i < N*PathORAM_Z; i ++) {
-    //         char str[12];
-    //         sprintf(str, "%zu\n", i);
-    //         std::string key(str);
-    //         std::string block = oram->get(key);
-    //         uint32_t value;
-    //         memcpy((& value), block.c_str(), sizeof(uint32_t));
-    //         //printf("%d ", value);
-    //     }
-    //     //printf("\n=========================================================================\n");
-    // }
-
-    //printf("\n=========================================================================\n");
-    //printf("the probility of two continuous access with path overlapping is %d\n",(oram->getcnt())*100/(roundNum*N*PathORAM_Z+N*PathORAM_Z+N*PathORAM_Z));
     delete oram;
     mongo::client::shutdown();
     return 0;

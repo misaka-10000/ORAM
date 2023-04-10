@@ -5,13 +5,11 @@
 #include "Config.h"
 #include <iostream>
 #include <algorithm>
+#include <vector>
 using namespace CryptoPP;
 
-bool PathORAM::cmp(uint32_t a,uint32_t b){
-    return fre_map[a]>fre_map[b];
-}
-
 PathORAM::PathORAM(const uint32_t& n) {
+    disp_cnt=0;
     ori_cnt=0;
     fusion_cnt=0;
     //树高，n=7则height=3
@@ -19,9 +17,9 @@ PathORAM::PathORAM(const uint32_t& n) {
     //叶子层bucket的数量
     n_blocks = (uint32_t)1 << (height - 1);
     stash.clear();
-    fre_map.clear();
     //对于每一个block，存其叶子bucket的位置(路径+level)
     pos_map = new std::pair<uint32_t, uint32_t>[n*PathORAM_Z];
+    fre_map = new uint32_t[n*PathORAM_Z];
     //建立连接
     conn = new MongoConnector(server_host, "oram.path");
     //生成一个随机数的密钥
@@ -45,6 +43,7 @@ PathORAM::PathORAM(const uint32_t& n) {
     //默认初始时将高度初始化为height+1也即不存在
     for (size_t i = 0; i < n*PathORAM_Z; ++i){
         pos_map[i] = std::make_pair(Util::rand_int(n_blocks),height+1);
+        fre_map[i] = 0;
     }
 }
 
@@ -118,7 +117,20 @@ void PathORAM::access(const char& op, const uint32_t& block_id, std::string& dat
     else stash[block_id] = data;
 
     fre_map[block_id] +=1;
-    sort(stash.begin(),stash.end(),cmp);
+    //disp();
+    std::vector<std::pair<uint32_t, std::string>> vec(stash.begin(), stash.end());
+    sort(vec.begin(),vec.end(), [&](const std::pair<uint32_t, std::string>& a, const std::pair<uint32_t, std::string>& b) {
+        return fre_map[a.first] > fre_map[b.first];
+    });
+    stash.clear(); // 清空原有的键值对
+    unordered_map<uint32_t, std::string> sortedMap(vec.begin(), vec.end());
+    for(int i=0;i<vec.size();i++){
+        stash[vec[vec.size()-1-i].first]=vec[vec.size()-1-i].second;
+    }
+
+
+    //disp();
+
 
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {
@@ -192,9 +204,47 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
 
-    fre_map[block_id] +=1;
 
-    sort(stash.begin(),stash.end(),cmp);
+    std::cout<<"before"<<std::endl;
+    std::vector<std::pair<uint32_t, std::string>> vec(stash.begin(), stash.end());
+    for(int i=0;i<vec.size();i++){
+        std::cout<<vec[i].first<<" ";
+    }
+    std::cout<<std::endl;
+    std::unordered_map<uint32_t, std::string>::iterator iter = stash.begin();
+    while (iter != stash.end()) {
+        std::cout<<iter->first<<" ";
+        iter++;
+    }
+    std::cout<<std::endl;
+
+    fre_map[block_id] +=1;
+    s_disp();
+    sort(vec.begin(), vec.end(), [&](const std::pair<uint32_t, std::string>& a, const std::pair<uint32_t, std::string>& b) {
+        return fre_map[a.first] > fre_map[b.first];
+    });
+    stash.clear(); // 清空原有的键值对
+    unordered_map<uint32_t, std::string> sortedMap(vec.begin(), vec.end());
+    for(int i=0;i<vec.size();i++){
+        stash[vec[vec.size()-1-i].first]=vec[vec.size()-1-i].second;
+    }
+
+
+
+    std::cout<<"after"<<std::endl;
+    for(int i=0;i<vec.size();i++){
+        std::cout<<vec[i].first<<" ";
+    }
+    std::cout<<std::endl;
+
+    iter = stash.begin();
+    while (iter != stash.end()) {
+        std::cout<<iter->first<<" ";
+        iter++;
+    }
+    std::cout<<std::endl;
+    
+
 
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {
@@ -398,4 +448,25 @@ double PathORAM::getcnt(){
 
 void PathORAM::addRequest(Request R){
     waitlist.push_back(R);
+}
+
+void PathORAM::disp(){
+    if(disp_cnt<6){
+        for(int i=0;i<(((uint32_t)1 << height) -1)*PathORAM_Z;i++){
+            std::cout<<"id: "<<i<<" cnt: "<<fre_map[i]<<std::endl;
+        }
+        for(auto b:stash){
+            std::cout<<b.first<<" ";
+        }
+        std::cout<<std::endl;
+        std::cout<<"--------------------"<<std::endl;
+        disp_cnt++;
+    }
+
+}
+
+void PathORAM::s_disp(){
+    for(int i=0;i<(((uint32_t)1 << height) -1)*PathORAM_Z;i++){
+        std::cout<<"id: "<<i<<" cnt: "<<fre_map[i]<<std::endl;
+    }
 }

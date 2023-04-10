@@ -6,6 +6,7 @@
 #include "ServerConnector.h"
 #include "Util.h"
 #include "Request.h"
+#include <vector>
 
 class PathORAM{
 public:
@@ -19,6 +20,8 @@ public:
     bool IsEmpty();
     void display();
     double getcnt();
+    void disp();
+    void s_disp();
     uint64_t cnt;
     std::vector<Request> waitlist;
     void addRequest(Request R);
@@ -26,6 +29,7 @@ public:
     void schedule();
     //第一个元素是对应Path,第二个元素是所在level
     std::pair<uint32_t, uint32_t> *pos_map;
+    uint32_t *fre_map;
     uint32_t fusion_cnt;
     uint32_t ori_cnt;
 private:
@@ -36,9 +40,7 @@ private:
     void fetchAllBlock(std::string* allblock, size_t& length);
     void fetchAlongPath(const uint32_t& x, std::string* sbuffer, size_t& length);
     void loadAlongPath(const uint32_t& x, const std::string* sbuffer, const size_t& length);
-    bool cmp(uint32_t a,uint32_t b);
     std::unordered_map<uint32_t, std::string> stash;
-    std::unordered_map<uint32_t, uint32_t> fre_map;
     std::vector< std::pair<uint32_t, std::string> > insert_buffer;
 
     std::string* allblock;
@@ -47,6 +49,7 @@ private:
     uint32_t n_blocks;
     uint32_t height;
     ServerConnector* conn;
+    int disp_cnt;
 };
 
 #endif //SEAL_ORAM_PATHORAM_H
