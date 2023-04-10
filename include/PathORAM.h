@@ -36,7 +36,9 @@ private:
     void fetchAllBlock(std::string* allblock, size_t& length);
     void fetchAlongPath(const uint32_t& x, std::string* sbuffer, size_t& length);
     void loadAlongPath(const uint32_t& x, const std::string* sbuffer, const size_t& length);
+    bool cmp(uint32_t a,uint32_t b);
     std::unordered_map<uint32_t, std::string> stash;
+    std::unordered_map<uint32_t, uint32_t> fre_map;
     std::vector< std::pair<uint32_t, std::string> > insert_buffer;
 
     std::string* allblock;

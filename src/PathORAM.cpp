@@ -4,7 +4,12 @@
 #include "MongoConnector.h"
 #include "Config.h"
 #include <iostream>
+#include <algorithm>
 using namespace CryptoPP;
+
+bool PathORAM::cmp(uint32_t a,uint32_t b){
+    return fre_map[a]>fre_map[b];
+}
 
 PathORAM::PathORAM(const uint32_t& n) {
     ori_cnt=0;
@@ -14,6 +19,7 @@ PathORAM::PathORAM(const uint32_t& n) {
     //叶子层bucket的数量
     n_blocks = (uint32_t)1 << (height - 1);
     stash.clear();
+    fre_map.clear();
     //对于每一个block，存其叶子bucket的位置(路径+level)
     pos_map = new std::pair<uint32_t, uint32_t>[n*PathORAM_Z];
     //建立连接
@@ -37,7 +43,9 @@ PathORAM::PathORAM(const uint32_t& n) {
         }
     }
     //默认初始时将高度初始化为height+1也即不存在
-    for (size_t i = 0; i < n*PathORAM_Z; ++i) pos_map[i] = std::make_pair(Util::rand_int(n_blocks),height+1);
+    for (size_t i = 0; i < n*PathORAM_Z; ++i){
+        pos_map[i] = std::make_pair(Util::rand_int(n_blocks),height+1);
+    }
 }
 
 PathORAM::~PathORAM() {
@@ -109,6 +117,9 @@ void PathORAM::access(const char& op, const uint32_t& block_id, std::string& dat
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
 
+    fre_map[block_id] +=1;
+    sort(stash.begin(),stash.end(),cmp);
+
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {
         uint32_t tot = 0;
@@ -134,12 +145,14 @@ void PathORAM::access(const char& op, const uint32_t& block_id, std::string& dat
             sbuffer[base + k] = dID + tmp_block;
         }
     }
+    
     //write Path
     for (size_t i = 0; i < height * PathORAM_Z; ++i) {
         std::string cipher;
         Util::aes_encrypt(sbuffer[i], key, cipher);
         sbuffer[i] = cipher;
     }
+
     loadAlongPath(x, sbuffer, height * PathORAM_Z);
 }
 
@@ -166,6 +179,7 @@ void PathORAM::fetchaccess(const char& op, const uint32_t& block_id, std::string
     //read操作复制数据，write操作覆盖stash
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
+    fre_map[block_id] +=1;
 }
 
 void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string& data,const uint32_t& path_id){
@@ -177,6 +191,10 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
     //read操作复制数据，write操作覆盖stash
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
+
+    fre_map[block_id] +=1;
+
+    sort(stash.begin(),stash.end(),cmp);
 
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {

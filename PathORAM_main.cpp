@@ -37,10 +37,10 @@ int main() {
     //printf("occupation rate of block close to leaf:%lf\n",oram->getcnt()/(N*PathORAM_Z));
 
     int32_t request_num=0;
-    while(!oram->IsEmpty()||request_num<1024){
-        while(oram->IsAvailable()&&request_num<1024){
+    while(!oram->IsEmpty()||request_num<N*PathORAM_Z){
+        while(oram->IsAvailable()&&request_num<N*PathORAM_Z){
             char str[12];
-            uint32_t blockID = Util::rand_int(1024);
+            uint32_t blockID = Util::rand_int(N*PathORAM_Z);
             sprintf(str, "%zu\n",(size_t)blockID);
             std::string key(str);
             std::string value;
