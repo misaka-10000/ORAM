@@ -115,21 +115,12 @@ void PathORAM::access(const char& op, const uint32_t& block_id, std::string& dat
     //read操作复制数据，write操作覆盖stash
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
-
     fre_map[block_id] +=1;
-    //disp();
+
     std::vector<std::pair<uint32_t, std::string>> vec(stash.begin(), stash.end());
     sort(vec.begin(),vec.end(), [&](const std::pair<uint32_t, std::string>& a, const std::pair<uint32_t, std::string>& b) {
         return fre_map[a.first] > fre_map[b.first];
     });
-    stash.clear(); // 清空原有的键值对
-    unordered_map<uint32_t, std::string> sortedMap(vec.begin(), vec.end());
-    for(int i=0;i<vec.size();i++){
-        stash[vec[vec.size()-1-i].first]=vec[vec.size()-1-i].second;
-    }
-
-
-    //disp();
 
 
     //寻找与原叶子节点属于同一path的block
@@ -196,70 +187,48 @@ void PathORAM::fetchaccess(const char& op, const uint32_t& block_id, std::string
 
 void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string& data,const uint32_t& path_id){
     
-    /*使用先前那个read的块的ID*/
-    //pos_map[block_id].first = Util::rand_int(n_blocks);
     pos_map[block_id].second = height+1;
 
     //read操作复制数据，write操作覆盖stash
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
-
-
-    std::cout<<"before"<<std::endl;
-    std::vector<std::pair<uint32_t, std::string>> vec(stash.begin(), stash.end());
-    for(int i=0;i<vec.size();i++){
-        std::cout<<vec[i].first<<" ";
-    }
-    std::cout<<std::endl;
-    std::unordered_map<uint32_t, std::string>::iterator iter = stash.begin();
-    while (iter != stash.end()) {
-        std::cout<<iter->first<<" ";
-        iter++;
-    }
-    std::cout<<std::endl;
-
     fre_map[block_id] +=1;
-    s_disp();
+
+    std::vector<std::pair<uint32_t, std::string>> vec(stash.begin(), stash.end());
+    //s_disp();
     sort(vec.begin(), vec.end(), [&](const std::pair<uint32_t, std::string>& a, const std::pair<uint32_t, std::string>& b) {
         return fre_map[a.first] > fre_map[b.first];
     });
-    stash.clear(); // 清空原有的键值对
-    unordered_map<uint32_t, std::string> sortedMap(vec.begin(), vec.end());
     for(int i=0;i<vec.size();i++){
-        stash[vec[vec.size()-1-i].first]=vec[vec.size()-1-i].second;
-    }
-
-
-
-    std::cout<<"after"<<std::endl;
-    for(int i=0;i<vec.size();i++){
-        std::cout<<vec[i].first<<" ";
+         std::cout<<vec[i].first<<" ";
     }
     std::cout<<std::endl;
 
-    iter = stash.begin();
+
+    auto iter = stash.begin();
     while (iter != stash.end()) {
         std::cout<<iter->first<<" ";
         iter++;
     }
     std::cout<<std::endl;
-    
 
 
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {
         uint32_t tot = 0;
         uint32_t base = i * PathORAM_Z;
-        std::unordered_map<uint32_t, std::string>::iterator j, tmp;
-        j = stash.begin();
-        while (j != stash.end() && tot < PathORAM_Z) {
+        std::vector<std::pair<uint32_t, std::string>>::iterator j, tmp;
+        j = vec.begin();
+        
+        while (j != vec.end() && tot < PathORAM_Z) {
             //检测与原叶子节点是否属于同一path,是的话则将他加入sbuffer写回队列
             if (check(pos_map[j->first].first, path_id, i)) {
                 std::string b_id = std::string((const char *)(&(j->first)), sizeof(uint32_t));
                 sbuffer[base + tot] = b_id + j->second;
+                stash.erase(j->first);
                 //写一下level信息
                 pos_map[j->first].second=height-1-i;
-                tmp = j; ++j; stash.erase(tmp);
+                tmp = j; ++j; vec.erase(tmp);
                 ++tot;
             } else ++j;
         }
@@ -271,6 +240,13 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
             sbuffer[base + k] = dID + tmp_block;
         }
     }
+    iter = stash.begin();
+    while (iter != stash.end()) {
+        std::cout<<iter->first<<" ";
+        iter++;
+    }
+    std::cout<<std::endl;
+    std::cout<<"--------------------------"<<std::endl;
     //write Path
     for (size_t i = 0; i < height * PathORAM_Z; ++i) {
         std::string cipher;
@@ -451,15 +427,19 @@ void PathORAM::addRequest(Request R){
 }
 
 void PathORAM::disp(){
-    if(disp_cnt<6){
+    if(disp_cnt<60-20){
+        auto iter = stash.begin();
+        while (iter != stash.end()) {
+            std::cout<<iter->first<<" ";
+            iter++;
+        }
+        std::cout<<std::endl;
+
         for(int i=0;i<(((uint32_t)1 << height) -1)*PathORAM_Z;i++){
             std::cout<<"id: "<<i<<" cnt: "<<fre_map[i]<<std::endl;
         }
-        for(auto b:stash){
-            std::cout<<b.first<<" ";
-        }
-        std::cout<<std::endl;
-        std::cout<<"--------------------"<<std::endl;
+
+    std::cout<<"--------------------"<<std::endl;
         disp_cnt++;
     }
 
