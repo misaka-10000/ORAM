@@ -204,16 +204,18 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
     for (uint32_t i = 0; i < height; ++i) {
         uint32_t tot = 0;
         uint32_t base = i * PathORAM_Z;
-        std::unordered_map<uint32_t, std::string>::iterator j, tmp;
-        j = stash.begin();
-        while (j != stash.end() && tot < PathORAM_Z) {
+        //std::unordered_map<uint32_t, std::string>::iterator j, tmp;
+        std::vector<std::pair<uint32_t, std::string>>::iterator j;
+        j = vec.begin();
+        while (j != vec.end() && tot < PathORAM_Z) {
             //检测与原叶子节点是否属于同一path,是的话则将他加入sbuffer写回队列
             if (check(pos_map[j->first].first, path_id, i)) {
                 std::string b_id = std::string((const char *)(&(j->first)), sizeof(uint32_t));
                 sbuffer[base + tot] = b_id + j->second;
                 //写一下level信息
                 pos_map[j->first].second=height-1-i;
-                tmp = j; ++j; stash.erase(tmp);
+                stash.erase(j->first);
+                j=vec.erase(j);
                 ++tot;
             } else ++j;
         }
