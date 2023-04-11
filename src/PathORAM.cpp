@@ -186,7 +186,7 @@ void PathORAM::fetchaccess(const char& op, const uint32_t& block_id, std::string
 }
 
 void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string& data,const uint32_t& path_id){
-    
+    //std::cout<<"enter here"<<std::endl;
     pos_map[block_id].second = height+1;
 
     //read操作复制数据，write操作覆盖stash
@@ -199,36 +199,21 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
     sort(vec.begin(), vec.end(), [&](const std::pair<uint32_t, std::string>& a, const std::pair<uint32_t, std::string>& b) {
         return fre_map[a.first] > fre_map[b.first];
     });
-    for(int i=0;i<vec.size();i++){
-         std::cout<<vec[i].first<<" ";
-    }
-    std::cout<<std::endl;
-
-
-    auto iter = stash.begin();
-    while (iter != stash.end()) {
-        std::cout<<iter->first<<" ";
-        iter++;
-    }
-    std::cout<<std::endl;
-
-
+    //std::cout<<"end here1"<<std::endl;
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {
         uint32_t tot = 0;
         uint32_t base = i * PathORAM_Z;
-        std::vector<std::pair<uint32_t, std::string>>::iterator j, tmp;
-        j = vec.begin();
-        
-        while (j != vec.end() && tot < PathORAM_Z) {
+        std::unordered_map<uint32_t, std::string>::iterator j, tmp;
+        j = stash.begin();
+        while (j != stash.end() && tot < PathORAM_Z) {
             //检测与原叶子节点是否属于同一path,是的话则将他加入sbuffer写回队列
             if (check(pos_map[j->first].first, path_id, i)) {
                 std::string b_id = std::string((const char *)(&(j->first)), sizeof(uint32_t));
                 sbuffer[base + tot] = b_id + j->second;
-                stash.erase(j->first);
                 //写一下level信息
                 pos_map[j->first].second=height-1-i;
-                tmp = j; ++j; vec.erase(tmp);
+                tmp = j; ++j; stash.erase(tmp);
                 ++tot;
             } else ++j;
         }
@@ -240,13 +225,8 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
             sbuffer[base + k] = dID + tmp_block;
         }
     }
-    iter = stash.begin();
-    while (iter != stash.end()) {
-        std::cout<<iter->first<<" ";
-        iter++;
-    }
-    std::cout<<std::endl;
-    std::cout<<"--------------------------"<<std::endl;
+    //std::cout<<"end here2"<<std::endl;
+    std::vector<std::pair<uint32_t, std::string>>(vec).swap(vec);
     //write Path
     for (size_t i = 0; i < height * PathORAM_Z; ++i) {
         std::string cipher;
