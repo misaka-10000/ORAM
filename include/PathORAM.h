@@ -29,7 +29,6 @@ public:
     void schedule();
     //第一个元素是对应Path,第二个元素是所在level
     std::pair<uint32_t, uint32_t> *pos_map;
-    uint32_t *fre_map;
     uint32_t fusion_cnt;
     uint32_t ori_cnt;
 private:
@@ -49,7 +48,6 @@ private:
     uint32_t n_blocks;
     uint32_t height;
     ServerConnector* conn;
-    int disp_cnt;
 };
 
 #endif //SEAL_ORAM_PATHORAM_H

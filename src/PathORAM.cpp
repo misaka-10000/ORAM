@@ -9,7 +9,6 @@
 using namespace CryptoPP;
 
 PathORAM::PathORAM(const uint32_t& n) {
-    disp_cnt=0;
     ori_cnt=0;
     fusion_cnt=0;
     //树高，n=7则height=3
@@ -19,7 +18,6 @@ PathORAM::PathORAM(const uint32_t& n) {
     stash.clear();
     //对于每一个block，存其叶子bucket的位置(路径+level)
     pos_map = new std::pair<uint32_t, uint32_t>[n*PathORAM_Z];
-    fre_map = new uint32_t[n*PathORAM_Z];
     //建立连接
     conn = new MongoConnector(server_host, "oram.path");
     //生成一个随机数的密钥
@@ -43,7 +41,6 @@ PathORAM::PathORAM(const uint32_t& n) {
     //默认初始时将高度初始化为height+1也即不存在
     for (size_t i = 0; i < n*PathORAM_Z; ++i){
         pos_map[i] = std::make_pair(Util::rand_int(n_blocks),height+1);
-        fre_map[i] = 0;
     }
 }
 
@@ -115,13 +112,6 @@ void PathORAM::access(const char& op, const uint32_t& block_id, std::string& dat
     //read操作复制数据，write操作覆盖stash
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
-    fre_map[block_id] +=1;
-
-    std::vector<std::pair<uint32_t, std::string>> vec(stash.begin(), stash.end());
-    sort(vec.begin(),vec.end(), [&](const std::pair<uint32_t, std::string>& a, const std::pair<uint32_t, std::string>& b) {
-        return fre_map[a.first] > fre_map[b.first];
-    });
-
 
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {
@@ -182,7 +172,6 @@ void PathORAM::fetchaccess(const char& op, const uint32_t& block_id, std::string
     //read操作复制数据，write操作覆盖stash
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
-    fre_map[block_id] +=1;
 }
 
 void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string& data,const uint32_t& path_id){
@@ -192,33 +181,28 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
     //read操作复制数据，write操作覆盖stash
     if (op == 'r') data = stash[block_id];
     else stash[block_id] = data;
-    fre_map[block_id] +=1;
 
-    std::vector<std::pair<uint32_t, std::string>> vec(stash.begin(), stash.end());
-    //s_disp();
-    sort(vec.begin(), vec.end(), [&](const std::pair<uint32_t, std::string>& a, const std::pair<uint32_t, std::string>& b) {
-        return fre_map[a.first] > fre_map[b.first];
-    });
-    //std::cout<<"end here1"<<std::endl;
     //寻找与原叶子节点属于同一path的block
     for (uint32_t i = 0; i < height; ++i) {
+        //printf("at height:%d\n",i);
         uint32_t tot = 0;
         uint32_t base = i * PathORAM_Z;
-        //std::unordered_map<uint32_t, std::string>::iterator j, tmp;
-        std::vector<std::pair<uint32_t, std::string>>::iterator j;
-        j = vec.begin();
-        while (j != vec.end() && tot < PathORAM_Z) {
+        std::unordered_map<uint32_t, std::string>::iterator j, tmp;
+        j = stash.begin();
+        while (j != stash.end() && tot < PathORAM_Z) {
             //检测与原叶子节点是否属于同一path,是的话则将他加入sbuffer写回队列
             if (check(pos_map[j->first].first, path_id, i)) {
                 std::string b_id = std::string((const char *)(&(j->first)), sizeof(uint32_t));
+                //std::cout<<"before assign"<<std::endl;
                 sbuffer[base + tot] = b_id + j->second;
                 //写一下level信息
                 pos_map[j->first].second=height-1-i;
-                stash.erase(j->first);
-                j=vec.erase(j);
+                tmp = j; ++j; stash.erase(tmp);
+                //std::cout<<"after assign"<<std::endl;
                 ++tot;
             } else ++j;
         }
+        //std::cout<<"end find in height"<<i<<std::endl;
         //不足的用dummy block替代
         for (int k = tot; k < PathORAM_Z; ++k) {
             std::string tmp_block  = Util::generate_random_block(B - Util::aes_block_size - sizeof(uint32_t));
@@ -227,8 +211,7 @@ void PathORAM::loadaccess(const char& op, const uint32_t& block_id, std::string&
             sbuffer[base + k] = dID + tmp_block;
         }
     }
-    //std::cout<<"end here2"<<std::endl;
-    std::vector<std::pair<uint32_t, std::string>>(vec).swap(vec);
+
     //write Path
     for (size_t i = 0; i < height * PathORAM_Z; ++i) {
         std::string cipher;
@@ -406,29 +389,4 @@ double PathORAM::getcnt(){
 
 void PathORAM::addRequest(Request R){
     waitlist.push_back(R);
-}
-
-void PathORAM::disp(){
-    if(disp_cnt<60-20){
-        auto iter = stash.begin();
-        while (iter != stash.end()) {
-            std::cout<<iter->first<<" ";
-            iter++;
-        }
-        std::cout<<std::endl;
-
-        for(int i=0;i<(((uint32_t)1 << height) -1)*PathORAM_Z;i++){
-            std::cout<<"id: "<<i<<" cnt: "<<fre_map[i]<<std::endl;
-        }
-
-    std::cout<<"--------------------"<<std::endl;
-        disp_cnt++;
-    }
-
-}
-
-void PathORAM::s_disp(){
-    for(int i=0;i<(((uint32_t)1 << height) -1)*PathORAM_Z;i++){
-        std::cout<<"id: "<<i<<" cnt: "<<fre_map[i]<<std::endl;
-    }
 }
