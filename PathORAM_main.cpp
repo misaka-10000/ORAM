@@ -17,7 +17,7 @@ int main() {
     // std::streambuf* p=std::cout.rdbuf(fout.rdbuf());
     mongo::client::initialize();
     srand((uint32_t)time(NULL));
-    uint32_t N = 15;
+    uint32_t N = 1023;
     PathORAM* oram = new PathORAM(N);
     //基本上填满的initialization
     for(uint32_t i = 0; i < N*PathORAM_Z; i ++) {
@@ -36,10 +36,9 @@ int main() {
         oram->put(key, value);
     }
     //printf("occupation rate of block close to leaf:%lf\n",oram->getcnt()/(N*PathORAM_Z));
-    for(int turn=0;turn<100;turn++){
         int32_t request_num=0;
-        while(!oram->IsEmpty()||request_num<N*PathORAM_Z){
-            while(oram->IsAvailable()&&request_num<N*PathORAM_Z){
+        while(!oram->IsEmpty()||request_num<1000){
+            while(oram->IsAvailable()&&request_num<1000){
                 char str[12];
                 uint32_t blockID = Util::rand_int(N*PathORAM_Z);
                 sprintf(str, "%zu\n",(size_t)blockID);
@@ -58,7 +57,6 @@ int main() {
             }
             oram->schedule();
         }
-    }
     //oram->display();
     std::cout<<"fusion cnt"<<oram->fusion_cnt<<"   "<<"ordinary cnt:"<<oram->ori_cnt<<std::endl;
     delete oram;
