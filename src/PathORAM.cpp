@@ -12,6 +12,7 @@ PathORAM::PathORAM(const uint32_t& n) {
     disp_cnt=0;
     ori_cnt=0;
     fusion_cnt=0;
+    hit=0;
     //树高，n=7则height=3
     height = (uint32_t)floor(log2((double)n)) + 1;
     //叶子层bucket的数量
@@ -20,6 +21,14 @@ PathORAM::PathORAM(const uint32_t& n) {
     //对于每一个block，存其叶子bucket的位置(路径+level)
     pos_map = new std::pair<uint32_t, uint32_t>[n*PathORAM_Z];
     fre_map = new uint32_t[n*PathORAM_Z];
+    stat = new uint32_t[height];
+    his = new uint32_t[n_blocks];
+    for(int i=0;i<height;i++){
+        stat[i]=0;
+    }
+    for(int i=0;i<n_blocks;i++){
+        his[i]=0;
+    }
     //建立连接
     conn = new MongoConnector(server_host, "oram.path");
     //生成一个随机数的密钥
@@ -279,11 +288,11 @@ bool PathORAM::IsEmpty(){
 }
 
 void PathORAM::display(){
-    cnt=0;
-    printf("All element in Stash:\n");
-    for(std::pair<uint32_t, std::string> kv:stash){
-        printf("block_id:%d belonging path:%d\n",kv.first,pos_map[kv.first].first);
-    }
+    //cnt=0;
+    // printf("All element in Stash:\n");
+    // for(std::pair<uint32_t, std::string> kv:stash){
+    //     printf("block_id:%d belonging path:%d\n",kv.first,pos_map[kv.first].first);
+    // }
     size_t length;
     printf("Now showing the tree block:\n");
     fetchAllBlock(allblock, length);
@@ -294,12 +303,15 @@ void PathORAM::display(){
             Util::aes_decrypt(allblock[i*PathORAM_Z+j], key, plain);
             int32_t b_id;
             memcpy(&b_id, plain.c_str(), sizeof(uint32_t));
-            if(b_id!=-1&&pos_map[b_id].second>=height-2) cnt+=1;
-            if(b_id!=-1)
-                printf("block_ID:%d path:%d level:%d\n",b_id,pos_map[b_id].first,pos_map[b_id].second);
-            else
-                printf("block_ID:%d\n",b_id);
+            if(b_id!=-1&&pos_map[b_id].second<=height-1&&stash.find(b_id) == stash.end()) stat[pos_map[b_id].second]+=1;
+            // if(b_id!=-1)
+            //     printf("block_ID:%d path:%d level:%d\n",b_id,pos_map[b_id].first,pos_map[b_id].second);
+            // else
+            //     printf("block_ID:%d\n",b_id);
         }
+    }
+    for(int i=0;i<height;i++){
+        std::cout<<stat[i]<<" ";
     }
     printf("---------------------------\n");
 }
@@ -355,6 +367,12 @@ void PathORAM::schedule(){
         if(fusion) break;
     }
     if(fusion){
+        if(stash.find(waitlist[i].id) != stash.end()) {
+            hit+=1;
+        }
+        if(stash.find(waitlist[j].id) != stash.end()) {
+            hit+=1;
+        }        
         Request r1=waitlist[i];
         Request r2=waitlist[j];
         uint32_t level1=pos_map[r1.id].second;
@@ -365,6 +383,7 @@ void PathORAM::schedule(){
                 uint32_t x = pos_map[r1.id].first;
                 if(r1.write) fetchaccess('w',r1.id,r1.value);
                 else fetchaccess('r',r1.id,r1.value);
+                his[x]+=1;
                 //新的r2把他和r1映射到同一条道路
                 pos_map[r2.id].first = pos_map[r1.id].first;
                 if(r2.write) loadaccess('w',r2.id,r2.value,x);
@@ -373,6 +392,7 @@ void PathORAM::schedule(){
         else{
             //原来的路径号,也是要写回的路径号
             uint32_t x = pos_map[r2.id].first;
+            his[x]+=1;
             if(r2.write) fetchaccess('w',r2.id,r2.value);
             else fetchaccess('r',r2.id,r2.value);
             //新的r2把他和r1映射到同一条道路
@@ -388,6 +408,9 @@ void PathORAM::schedule(){
     }
     //无法进行fusion
     else{
+        if(stash.find(waitlist[0].id) != stash.end()) {
+            hit+=1;
+        }
         if(waitlist[0].write){
             put(waitlist[0].id,waitlist[0].value);
         }

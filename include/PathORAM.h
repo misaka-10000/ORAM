@@ -32,6 +32,9 @@ public:
     uint32_t *fre_map;
     uint32_t fusion_cnt;
     uint32_t ori_cnt;
+    uint32_t n_blocks;
+    uint32_t *his;
+    uint32_t hit;
 private:
     void access(const char& op, const uint32_t& block_id, std::string& data);
     void fetchaccess(const char& op, const uint32_t& block_id, std::string& data);
@@ -46,7 +49,7 @@ private:
     std::string* allblock;
     byte* key;
     std::string* sbuffer;
-    uint32_t n_blocks;
+    uint32_t *stat;
     uint32_t height;
     ServerConnector* conn;
     int disp_cnt;
