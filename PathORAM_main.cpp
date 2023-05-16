@@ -35,8 +35,8 @@ int main() {
     }
     //oram->display();
     int32_t request_num=0;
-    while(!oram->IsEmpty()||request_num<50000){
-        while(oram->IsAvailable()&&request_num<50000){
+    while(!oram->IsEmpty()||request_num<1000){
+        while(oram->IsAvailable()&&request_num<1000){
             char str[12];
             uint32_t blockID = Util::rand_int(N*PathORAM_Z);
             sprintf(str, "%zu\n",(size_t)blockID);
