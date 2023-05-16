@@ -13,8 +13,6 @@ bool randomBool(){
 
 
 int main() {
-    // std::ofstream fout("a.txt");
-    // std::streambuf* p=std::cout.rdbuf(fout.rdbuf());
     mongo::client::initialize();
     srand((uint32_t)time(NULL));
     uint32_t N = 1023;
