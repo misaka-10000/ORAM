@@ -11,6 +11,7 @@ using namespace CryptoPP;
 PathORAM::PathORAM(const uint32_t& n) {
     ori_cnt=0;
     fusion_cnt=0;
+    hit =0;
     //树高，n=7则height=3
     height = (uint32_t)floor(log2((double)n)) + 1;
     //叶子层bucket的数量
@@ -338,6 +339,12 @@ void PathORAM::schedule(){
         if(fusion) break;
     }
     if(fusion){
+        if(stash.find(waitlist[i].id) != stash.end()) {
+            hit+=1;
+        }
+        if(stash.find(waitlist[j].id) != stash.end()) {
+            hit+=1;
+        }        
         Request r1=waitlist[i];
         Request r2=waitlist[j];
         uint32_t level1=pos_map[r1.id].second;
@@ -371,6 +378,9 @@ void PathORAM::schedule(){
     }
     //无法进行fusion
     else{
+        if(stash.find(waitlist[0].id) != stash.end()) {
+            hit+=1;
+        }
         if(waitlist[0].write){
             put(waitlist[0].id,waitlist[0].value);
         }
