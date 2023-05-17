@@ -4,6 +4,7 @@
 #include "Config.h"
 #include <iostream>
 #include <fstream>
+#include <chrono>
 using namespace mongo;
 using namespace CryptoPP;
 
@@ -35,6 +36,7 @@ int main() {
     }
     //oram->display();
     int32_t request_num=0;
+    auto start = std::chrono::high_resolution_clock::now();
     while(!oram->IsEmpty()||request_num<1000){
         while(oram->IsAvailable()&&request_num<1000){
             char str[12];
@@ -55,7 +57,10 @@ int main() {
         }
         oram->schedule();
     }
-    std::cout<<oram->hit<<std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "runtime: " << duration.count() << " ms" << std::endl;   
+    //std::cout<<oram->hit<<std::endl;
     delete oram;
     mongo::client::shutdown();
     return 0;
